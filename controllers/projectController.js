@@ -2,8 +2,9 @@ const { v4: uuidv4 } = require('uuid');
 const { createProject } = require("../models/projectModel");
 const projectSchema = require("../validations/projectValidation");
 const { uploadFile } = require("./uploadController");
+const { getAllProjects } = require("../models/projectModel");
 
-  const addProject = async (req, res) => {
+const addProject = async (req, res) => {
     try {
       // Validate request body
     const { error } = projectSchema.validate(req.body);
@@ -45,5 +46,22 @@ const { uploadFile } = require("./uploadController");
       res.status(500).json({ error: error.message });
     }
   };
+
+  // Controller function to handle fetching projects
+  const getProjects = async (req, res) => {
+    try {
+      const projects = await getAllProjects();
   
-  module.exports = { addProject };
+      if (!Array.isArray(projects)) {
+        console.error("Unexpected data format from getAllProjects.");
+        return res.status(500).json({ message: "Internal Server Error" });
+      }
+  
+      res.json(projects);
+    } catch (error) {
+      console.error("Error in controller:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  
+  module.exports = { addProject ,getProjects};
