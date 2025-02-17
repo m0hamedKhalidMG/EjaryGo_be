@@ -3,6 +3,7 @@ const session = require('express-session');
 const passport = require("./config/auth");
 const authRoutes = require("./routes/authRoutes");
 const projectRoutes = require("./routes/projectRoute");
+const developerRoutes = require("./routes/developerRoutes");
 
 const userRoutes = require("./routes/userRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
@@ -49,6 +50,7 @@ app.use(
 app.use("/users", userRoutes);
 app.use("/employees", employeeRoutes);
 app.use("/project", projectRoutes);
+app.use("/developers", developerRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
