@@ -4,9 +4,8 @@ const passport = require("./config/auth");
 const authRoutes = require("./routes/authRoutes");
 const projectRoutes = require("./routes/projectRoute");
 const developerRoutes = require("./routes/developerRoutes");
-
+const employeeRoutes=require("./routes/employeeRoutes")
 const userRoutes = require("./routes/userRoutes");
-const employeeRoutes = require("./routes/employeeRoutes");
 require("dotenv").config();
 require('./config/auth');
 

@@ -4,8 +4,12 @@ const {
     getDeveloperById,
     updateDeveloper,
     deleteDeveloper,
+    addTeam,
+    addEmployeeToTeamModel,
     updateDeveloperAttachment,
   } = require("../models/developerModel");
+  const Joi = require('joi');
+
   const {uploadFile} =require("./uploadController")
   const createDeveloperHandler = async (req, res) => {
     try {
@@ -87,13 +91,49 @@ const putAttachmentDeveloper = async (req, res) => {
   }
 };
     // Upload file to Firebase
+const addTeamToDeveloper = async (req, res) => {
+      const { developerId } = req.params;
+      const { name, role, managerId } = req.body;
+    
+      const teamSchema = Joi.object({
+        name: Joi.string().trim().min(3).required(),
+        role: Joi.string()
+          .valid('Freelancing', 'Marketing', 'Sales', 'Finance', 'Broker')
+          .required(),
+        managerId: Joi.string().trim().required(),
+      });
+    
+      const { error } = teamSchema.validate({ name, role, managerId });
+    
+      if (error) {
+        return res.status(400).json({ error: error.details[0].message });
+      }
+    
+      try {
+        const result = await addTeam(developerId, { name, role, managerId });
+        res.status(200).json({ message: result });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    };
+const addEmployeeToTeam = async (req, res) => {
+      const { developerId, teamId, employeeId } = req.body;
 
+      try {
+        const message = await addEmployeeToTeamModel( developerId, teamId, employeeId);
+        res.status(200).json({ message });
+      } catch (error) {
+        res.status(400).json({ error: error.message });
+      }
+    };
   module.exports = {
     createDeveloperHandler,
     getAllDevelopersHandler,
     getDeveloperByIdHandler,
     updateDeveloperHandler,
     deleteDeveloperHandler,
-    putAttachmentDeveloper
+    putAttachmentDeveloper,
+    addTeamToDeveloper,
+    addEmployeeToTeam
   };
   

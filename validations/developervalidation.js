@@ -38,23 +38,24 @@ const developerSchema = Joi.object({
     instagram: Joi.string().uri().allow('').default(''),
   }).default({}),
 
+  // Teams array, each containing manager and employee references
   teams: Joi.array().items(
     Joi.object({
       name: Joi.string().trim().min(3).required()
         .messages({ 'string.min': 'Team name must be at least 3 characters.' }),
 
-      role: Joi.string().valid('Engineering', 'Marketing', 'Sales', 'Finance', 'Other').required()
+      role: Joi.string().valid('Freelancing', 'Marketing', 'Sales', 'Finance', 'Broker').required()
         .messages({ 'any.only': 'Role must be one of Engineering, Marketing, Sales, Finance, Other.' }),
 
-      managerId: Joi.string().trim().required()
+      managerId: Joi.string().trim().required()  // Reference to the manager (employee ID)
+
         .messages({ 'string.empty': 'Manager ID is required.' }),
 
       employees: Joi.array().items(
-        Joi.string().trim().required()
+        Joi.string().trim().required()  // References to employee IDs
       ).default([]),
     })
   ).default([]),
 });
 
 module.exports = developerSchema;
-
