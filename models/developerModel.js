@@ -1,5 +1,6 @@
 const { db } = require("../config/firebase");
-const { collection, doc,addDoc, getDoc, getDocs, setDoc, deleteDoc, updateDoc,arrayUnion  } = require("firebase/firestore/lite");
+const { collection, doc,addDoc, getDoc, getDocs, setDoc, deleteDoc, updateDoc,arrayUnion, query,
+  where,  } = require("firebase/firestore/lite");
 const { v4: uuidv4 } = require('uuid');
 // CREATE Developer
 const createDeveloper = async ( developerData) => {
@@ -32,13 +33,13 @@ const getAllDevelopers = async () => {
 };
 
 // GET Developer by ID
-const getDeveloperById = async (developerId) => {
-  const developerRef = doc(db, "developers", developerId);
-  const developerSnap = await getDoc(developerRef);
-  if (!developerSnap.exists()) throw new Error("Developer not found");
+// const getDeveloperById = async (developerId) => {
+//   const developerRef = doc(db, "developers", developerId);
+//   const developerSnap = await getDoc(developerRef);
+//   if (!developerSnap.exists()) throw new Error("Developer not found");
 
-  return { id: developerSnap.id, ...developerSnap.data() };
-};
+//   return { id: developerSnap.id, ...developerSnap.data() };
+// };
 
 // UPDATE Developer
 const updateDeveloper = async (developerId, updatedData) => {
@@ -91,10 +92,6 @@ const addTeam = async (developerId, teamData) => {
   }
 };
 
-
-
-
-
 const addEmployeeToTeamModel = async (developerId, teamId, employeeId) => {
   try {
     // Check if employee exists
@@ -139,7 +136,91 @@ const addEmployeeToTeamModel = async (developerId, teamId, employeeId) => {
   }
 };
 
+const getdeveloperByEmail = async (email) => {
+  try {
+     const q = query(collection(db, "developers"), where("email", "==", email));
+     const querySnapshot = await getDocs(q);
+ 
+     if (querySnapshot.empty) {
+       return null; // No user found
+     }
+     const docSnapshot = querySnapshot.docs[0];
+
+     return {
+      id: docSnapshot.id,   // Return developer ID
+      ...docSnapshot.data() // Return developer data
+    };
+   } catch (error) {
+     console.error("Error retrieving developer:", error);
+     throw error;
+   }
+};
+
+const fetchDeveloperById = async (developerId) => {
+  try {
+    // Reference to the developer document
+    const developerRef = doc(db, "developers", developerId);
+    const developerSnap = await getDoc(developerRef);
+
+    if (!developerSnap.exists()) {
+      return null; // Developer not found
+    }
+
+    let developerData = developerSnap.data();
+
+    // Remove password before sending response
+    delete developerData.password;
+
+    // Fetch manager and employees' details for each team
+    if (developerData.teams && developerData.teams.length > 0) {
+      const teamPromises = developerData.teams.map(async (team) => {
+        let managerDetails = null;
+        let employeesDetails = [];
+
+        // Fetch manager details
+        if (team.managerId) {
+          const managerRef = doc(db, "employees", team.managerId);
+          const managerSnap = await getDoc(managerRef);
+
+          if (managerSnap.exists()) {
+            managerDetails = managerSnap.data();
+            delete managerDetails.password; // Remove password
+          }
+        }
+
+        // Fetch details of all employees in the team
+        if (team.employees && team.employees.length > 0) {
+          const employeePromises = team.employees.map(async (employeeId) => {
+            const employeeRef = doc(db, "employees", employeeId);
+            const employeeSnap = await getDoc(employeeRef);
+
+            if (employeeSnap.exists()) {
+              let employeeData = employeeSnap.data();
+              delete employeeData.password; // Remove password
+              return employeeData;
+            }
+            return null;
+          });
+
+          employeesDetails = await Promise.all(employeePromises);
+        }
+
+        return {
+          ...team,
+          managerDetails,
+          employees: employeesDetails.filter((emp) => emp !== null), // Remove null values
+        };
+      });
+
+      // Resolve all team data fetching operations
+      developerData.teams = await Promise.all(teamPromises);
+    }
+
+    return developerData;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
 
 
-
-module.exports = { createDeveloper, getAllDevelopers, getDeveloperById, updateDeveloper, deleteDeveloper,updateDeveloperAttachment,addTeam,addEmployeeToTeamModel };
+module.exports = {fetchDeveloperById, getdeveloperByEmail,createDeveloper, getAllDevelopers, updateDeveloper, deleteDeveloper,updateDeveloperAttachment,addTeam,addEmployeeToTeamModel };

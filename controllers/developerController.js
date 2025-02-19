@@ -1,15 +1,17 @@
 const {
     createDeveloper,
     getAllDevelopers,
-    getDeveloperById,
     updateDeveloper,
     deleteDeveloper,
     addTeam,
     addEmployeeToTeamModel,
     updateDeveloperAttachment,
+    getdeveloperByEmail,
+    fetchDeveloperById,
   } = require("../models/developerModel");
   const Joi = require('joi');
-
+  const bcrypt = require("bcryptjs");
+  const jwt = require("jsonwebtoken");
   const {uploadFile} =require("./uploadController")
   const createDeveloperHandler = async (req, res) => {
     try {
@@ -20,7 +22,9 @@ const {
       attachmentUrl = await uploadFile(req.file, `developers/${developerId}/developers`);
     }
 
-      const developer = await createDeveloper( { ...req.body, attachmentUrl });
+    let DeveloperData=req.body
+    DeveloperData.password = await bcrypt.hash(DeveloperData.password, 10);
+      const developer = await createDeveloper( { ...DeveloperData, attachmentUrl });
       res.status(201).json(developer);
     } catch (error) {
       console.log(error)
@@ -67,7 +71,46 @@ const {
       res.status(500).json({ message: error.message });
     }
   };
-
+  const developerLogin = async (req, res) => {
+    try {
+      const { email, password } = req.body;
+  
+      // Check if user exists
+      const developer = await getdeveloperByEmail(email);
+      if (!developer) {
+        return res.status(400).json({ error: "Invalid email or password!" });
+      }
+  
+      // Verify Password
+      const isPasswordValid = await bcrypt.compare(password, developer.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ error: "Invalid email or password!" });
+      }
+  console.log(developer)
+      // Generate JWT Token
+      const token = jwt.sign(
+        { id: developer.id, email: developer.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "24h" }
+      );
+  
+      return res.status(200).json({
+        message: "Login successful",
+        token,
+        developer: {
+          id: developer.id,
+          name: developer.name,
+          email: developer.email,
+          role: "developer",
+        },
+      });
+  
+    } catch (error) {
+      console.error(error); 
+      return res.status(500).json({ error: error.message });
+    }
+  };
+  
 
 // Upload attachment and update developer record
 const putAttachmentDeveloper = async (req, res) => {
@@ -126,6 +169,24 @@ const addEmployeeToTeam = async (req, res) => {
         res.status(400).json({ error: error.message });
       }
     };
+const getDeveloperById = async (req, res) => {
+      try {
+        //const { developerId } = req.params;
+        const developerId = req.user.id; 
+console.log(req.user)
+        // Fetch developer and their teams' employee details
+        const developerData = await fetchDeveloperById(developerId);
+    
+        if (!developerData) {
+          return res.status(404).json({ error: "Developer not found." });
+        }
+    
+        return res.status(200).json({ developer: developerData });
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: error.message });
+      }
+    };
   module.exports = {
     createDeveloperHandler,
     getAllDevelopersHandler,
@@ -134,6 +195,8 @@ const addEmployeeToTeam = async (req, res) => {
     deleteDeveloperHandler,
     putAttachmentDeveloper,
     addTeamToDeveloper,
-    addEmployeeToTeam
+    addEmployeeToTeam,
+    developerLogin,
+    getDeveloperById
   };
   
