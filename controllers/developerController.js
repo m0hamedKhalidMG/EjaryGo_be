@@ -8,6 +8,7 @@ const {
     updateDeveloperAttachment,
     getdeveloperByEmail,
     fetchDeveloperById,
+    getTeamsByAttribute,
   } = require("../models/developerModel");
   const Joi = require('joi');
   const bcrypt = require("bcryptjs");
@@ -91,7 +92,7 @@ const {
       const token = jwt.sign(
         { id: developer.id, email: developer.email },
         process.env.JWT_SECRET,
-        { expiresIn: "24h" }
+        { expiresIn: "30d" }
       );
   
       return res.status(200).json({
@@ -187,6 +188,32 @@ console.log(req.user)
         return res.status(500).json({ error: error.message });
       }
     };
+
+    const searchTeamByAttribute = async (req, res) => {
+      try {
+        const { teamName, attribute, value, page, pageSize } = req.query;
+        const developerId = req.user.id; // ✅ Extract developer ID from authenticated user
+    
+        console.log("🔍 Searching with:", { teamName, attribute, value, developerId });
+    
+        // ✅ Fetch employees based on team name and specified attribute
+        const results = await getTeamsByAttribute(teamName, attribute, value, developerId, Number(page), Number(pageSize));
+    
+        if (results.employees.length === 0) {
+          return res.status(404).json({ message: "No matching employees found." });
+        }
+    
+        res.status(200).json(results);
+      } catch (error) {
+        console.error("❌ Error while searching:", error);
+        console.log(error);
+        res.status(500).json({ error: "Internal server error." });
+      }
+    };
+    
+    
+    module.exports = { searchTeamByAttribute };
+    
   module.exports = {
     createDeveloperHandler,
     getAllDevelopersHandler,
@@ -197,6 +224,7 @@ console.log(req.user)
     addTeamToDeveloper,
     addEmployeeToTeam,
     developerLogin,
-    getDeveloperById
+    getDeveloperById,
+    searchTeamByAttribute
   };
   

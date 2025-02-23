@@ -9,13 +9,15 @@ const {
   addEmployeeToTeam,
   addTeamToDeveloper,
   developerLogin,
-  getDeveloperById
+  getDeveloperById,
+  searchTeamByAttribute
 } = require("../controllers/developerController");
 const upload = require("../middleware/uploadMiddleware");
 const {isAuthenticated,verifyJWT }= require("../middleware/authMiddleware")
 
 const router = express.Router();
 
+router.get("/search", verifyJWT,searchTeamByAttribute);
 
 router.post("/:developerId/add-team", addTeamToDeveloper);
 router.post('/add-employee-to-team', addEmployeeToTeam);

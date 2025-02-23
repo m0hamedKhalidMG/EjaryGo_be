@@ -221,6 +221,108 @@ const fetchDeveloperById = async (developerId) => {
     throw new Error(error.message);
   }
 };
+const fetchEmployeeById = async (employeeId) => {
+  if (!employeeId) return null;
+  const employeeRef = doc(db, "employees", employeeId);
+  const employeeSnap = await getDoc(employeeRef);
+  if (!employeeSnap.exists()) return null;
 
+  const employeeData = employeeSnap.data();
+  delete employeeData.password; // Remove sensitive data
+  return employeeData;
+};
 
-module.exports = {fetchDeveloperById, getdeveloperByEmail,createDeveloper, getAllDevelopers, updateDeveloper, deleteDeveloper,updateDeveloperAttachment,addTeam,addEmployeeToTeamModel };
+// ✅ Filter employee by attribute
+const filterEmployeeByAttribute = (employee, attribute, value) => {
+  if (!employee[attribute]) return false;
+
+  return Array.isArray(employee[attribute])
+    ? employee[attribute].some(item => item.toString().toLowerCase().includes(value.toLowerCase()))
+    : employee[attribute].toString().toLowerCase().includes(value.toLowerCase());
+};
+
+// ✅ Paginate results and generate response
+const paginateResults = (results, page, pageSize, teamManager) => {
+  const totalItems = results.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+  const paginatedResults = results.slice((page - 1) * pageSize, page * pageSize);
+
+  return generateResponse(paginatedResults, totalItems, page, pageSize, teamManager);
+};
+
+// ✅ Standard response format
+const generateResponse = (employees, totalItems, page, pageSize, teamManager) => ({
+  employees,
+  meta: {
+    totalItems,
+    page,
+    pageSize,
+    totalPages: Math.ceil(totalItems / pageSize),
+    hasNextPage: page < Math.ceil(totalItems / pageSize),
+    hasPrevPage: page > 1,
+    teamManager,
+  },
+});
+/**
+ * Searches for teams where any employee has a specific attribute.
+ * @param {string} attribute - The employee attribute to search for.
+ * @param {string} value - The value to match.
+ * @returns {Promise<Array>} - A list of teams with matching employees.
+ */
+const getTeamsByAttribute = async (teamName, attribute, value, developerId, page, pageSize) => {
+  try {
+    console.log("🔎 Searching in developer data:", developerId);
+
+    // ✅ Fetch developer details from Firestore
+    const developerRef = doc(db, "developers", developerId);
+    const developerSnap = await getDoc(developerRef);
+
+    if (!developerSnap.exists()) {
+      console.error("❌ Developer not found.");
+      return generateResponse([], 0, page, pageSize, null);
+    }
+
+    const developerData = developerSnap.data();
+    let results = [];
+    let teamManager = null;
+
+    // ✅ Filter teams based on `teamName`
+    const filteredTeams = developerData.teams?.filter(team =>
+      team.name.toLowerCase().includes(teamName.toLowerCase())
+    ) || [];
+
+    for (const team of filteredTeams) {
+      // ✅ Fetch team manager details
+      teamManager = await fetchEmployeeById(team.managerId);
+
+      // ✅ Fetch and filter employees
+      const employeePromises = team.employees?.map(fetchEmployeeById) || [];
+      const employees = (await Promise.all(employeePromises)).filter(emp => emp !== null);
+
+      const matchingEmployees = attribute && value
+        ? employees.filter(emp => filterEmployeeByAttribute(emp, attribute, value))
+        : employees;
+
+      results.push(...matchingEmployees);
+    }
+
+    return paginateResults(results, page, pageSize, teamManager);
+  } catch (error) {
+    console.error("❌ Error while searching:", error.message);
+    return generateResponse([], 0, page, pageSize, null);
+  }
+};
+
+module.exports = {
+  fetchDeveloperById, 
+  getdeveloperByEmail,
+  createDeveloper, 
+  getAllDevelopers,
+  updateDeveloper, 
+  deleteDeveloper,
+  updateDeveloperAttachment,
+  addTeam,
+  addEmployeeToTeamModel,
+  getTeamsByAttribute };
