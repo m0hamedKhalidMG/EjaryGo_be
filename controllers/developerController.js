@@ -199,7 +199,7 @@ console.log(req.user)
         // ✅ Fetch employees based on team name and specified attribute
         const results = await getTeamsByAttribute(teamName, attribute, value, developerId, Number(page), Number(pageSize));
     
-        if (results.employees.length === 0) {
+        if (results.Data.length === 0) {
           return res.status(404).json({ message: "No matching employees found." });
         }
     

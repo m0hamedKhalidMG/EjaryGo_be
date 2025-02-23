@@ -254,7 +254,7 @@ const paginateResults = (results, page, pageSize, teamManager) => {
 
 // ✅ Standard response format
 const generateResponse = (employees, totalItems, page, pageSize, teamManager) => ({
-  employees,
+  Data:employees,
   meta: {
     totalItems,
     page,
