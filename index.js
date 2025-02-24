@@ -9,7 +9,6 @@ const userRoutes = require("./routes/userRoutes");
 const propertyRoutes=require('./routes/propertyRoute')
 require("dotenv").config();
 require('./config/auth');
-
 const app = express();
 app.use(express.json());
 app.use(express.json());
