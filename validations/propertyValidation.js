@@ -17,8 +17,7 @@ const propertySchema = Joi.object({
   kitchens: Joi.number().integer().min(0).required(),
   bathrooms: Joi.number().integer().min(1).required(),
   bedrooms: Joi.number().integer().min(1).required(),
-  images: Joi.array().items(Joi.string().uri()).default([]),
-  features: Joi.array().items(Joi.string()).required(),
+  features: Joi.string().min(1).required(), // Changed to a string instead of an array
   unitNumber: Joi.string().required(),
   roomSizes: Joi.object()
     .pattern(Joi.string(), Joi.number().positive().required())

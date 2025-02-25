@@ -1,29 +1,49 @@
 const { addProperty, updateProperty, uploadPropertyImages ,getPropertyById,getPropertiesByProjectId} = require("../models/propertyModel");
 const { propertySchema } = require("../validations/propertyValidation");
 const { paginateResults } = require("../utils/pagination");
+const { medicalUnitSchema } = require("../validations/medicalUnitValidation");
+const { OtherUnitSchema } = require("../validations/Otherunitvalidation");
 
 /**
  * Create a new property
  */
 const createProperty = async (req, res) => {
   try {
-    // Validate request body
-    const { error, value } = propertySchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
-    var images=[]
-    // Upload images to Firebase Storage
-    if (req.files && req.files.length > 0) {
-         images = await uploadPropertyImages(req.files, "properties");
+    let schema;
+    if (typeof req.body.totalPrice === "string") {
+      req.body.totalPrice = JSON.parse(req.body.totalPrice);
+    }
+    if (typeof req.body.roomSizes === "string") {
+      req.body.roomSizes = JSON.parse(req.body.roomSizes);
+    }
+    // Determine the correct schema based on property type
+    if (["medicalUnit", "administrative"].includes(req.body.type)) {
+      schema = medicalUnitSchema;
+    } else if (["apartment", "villa", "studio", "penthouse"].includes(req.body.type)) {
+      schema = propertySchema;
+    }else if (["Entertainment","Commercial"].includes(req.body.type)) {
+      schema = OtherUnitSchema;
+    } else {
+      return res.status(400).json({ error: "Invalid property type." });
+    }
 
-      }
-      
-     
-      
+    // Validate request body
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    let images = [];
+
+    // Upload images to Firebase Storage if provided
+    if (req.files && req.files.length > 0) {
+      images = await uploadPropertyImages(req.files, "properties");
+    }
+
     // Save property details in Firestore
     const property = await addProperty({ ...value, images });
 
     res.status(201).json({ message: "Property added successfully", property });
   } catch (error) {
+    console.error("Error creating property:", error);
     res.status(500).json({ error: error.message });
   }
 };
