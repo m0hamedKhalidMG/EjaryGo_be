@@ -90,8 +90,30 @@
       <label>Upload Video (Max 1):</label>
       <input type="file" id="video" name="video" accept="video/*" /><br /><br />
 
-      <label>Upload Documents (Max 5):</label>
-      <input type="file" id="documents" name="documents" multiple /><br /><br />
+      <!-- New Document Fields -->
+      <label>Upload Ministerial Decision (Max 1):</label>
+      <input
+        type="file"
+        id="ministerialDecision"
+        name="ministerialDecision"
+        accept=".pdf,.doc,.docx"
+      /><br /><br />
+
+      <label>Upload Land Ownership Documents (Max 1):</label>
+      <input
+        type="file"
+        id="landOwnershipDocs"
+        name="landOwnershipDocs"
+        accept=".pdf,.doc,.docx"
+      /><br /><br />
+
+      <label>Upload Construction Documents (Max 1):</label>
+      <input
+        type="file"
+        id="constructionDocs"
+        name="constructionDocs"
+        accept=".pdf,.doc,.docx"
+      /><br /><br />
 
       <label>Upload 3D File (Max 1, .obj/.gltf only):</label>
       <input
@@ -107,12 +129,12 @@
     <script>
       document.getElementById("images").addEventListener("change", function () {
         const imagePreview = document.getElementById("imagePreview");
-        imagePreview.innerHTML = ""; // Clear previous previews
+        imagePreview.innerHTML = "";
         const files = this.files;
 
         if (files.length > 20) {
           alert("You can upload a maximum of 20 images.");
-          this.value = ""; // Reset file input
+          this.value = "";
           return;
         }
 
@@ -163,7 +185,7 @@
             parseFloat(document.getElementById("longitude").value)
           );
 
-          // Convert features (comma-separated) to an array
+          // Convert features to array
           const featuresText = document.getElementById("features").value.trim();
           if (featuresText) {
             featuresText.split(",").forEach((feature, index) => {
@@ -173,12 +195,8 @@
 
           // Handle multiple images (limit 20)
           const images = document.getElementById("images").files;
-          if (images.length > 20) {
-            alert("You can only upload up to 20 images.");
-            return;
-          }
           for (let i = 0; i < images.length; i++) {
-            formData.append("images[]", images[i]);
+            formData.append("images", images[i]);
           }
 
           // Handle video file
@@ -187,26 +205,30 @@
             formData.append("video", video);
           }
 
-          // Handle multiple documents (limit 5)
-          const documents = document.getElementById("documents").files;
-          if (documents.length > 5) {
-            alert("You can only upload up to 5 documents.");
-            return;
-          }
-          for (let i = 0; i < documents.length; i++) {
-            formData.append("documents[]", documents[i]);
+          // Handle new document uploads
+          const ministerialDecision = document.getElementById(
+            "ministerialDecision"
+          ).files[0];
+          if (ministerialDecision) {
+            formData.append("ministerialDecision", ministerialDecision);
           }
 
-          // Handle a single 3D file
+          const landOwnershipDocs =
+            document.getElementById("landOwnershipDocs").files[0];
+          if (landOwnershipDocs) {
+            formData.append("landOwnershipDocs", landOwnershipDocs);
+          }
+
+          const constructionDocs =
+            document.getElementById("constructionDocs").files[0];
+          if (constructionDocs) {
+            formData.append("constructionDocs", constructionDocs);
+          }
+
+          // Handle 3D file
           const threeD = document.getElementById("threeD").files[0];
           if (threeD) {
             formData.append("threeD", threeD);
-          }
-
-          // Debugging: Log FormData content
-          console.log("Submitting FormData...");
-          for (let pair of formData.entries()) {
-            console.log(pair[0], pair[1]);
           }
 
           try {
