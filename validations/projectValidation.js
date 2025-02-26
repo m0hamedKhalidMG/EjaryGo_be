@@ -11,7 +11,49 @@ const projectSchema = Joi.object({
   entertainmentNumber: Joi.number().min(0).required(),
   healthNumber: Joi.number().min(0).required(),
   industrialNumber: Joi.number().min(0).required(),
-
+  images: Joi.array().items(
+    Joi.string().uri()
+      .messages({ 'string.uri': 'images must be a valid URL.' })
+  ).default([]),
+  landOwnershipDocs: Joi.string()
+  .uri()
+  .messages({
+    'string.uri': 'landOwnershipDocs must be a valid URL.'
+  })
+  .allow('') 
+  .default(''), 
+  video: Joi.string()
+  .uri()
+  .messages({
+    'string.uri': 'video must be a valid URL.'
+  })
+  .allow('') 
+  .default(''), 
+  ministerialDecision: Joi.string()
+  .uri()
+  .messages({
+    'string.uri': 'ministerialDecision must be a valid URL.'
+  })
+  .allow('') 
+  .default(''), 
+  constructionDocs: Joi.string()
+  .uri()
+  .messages({
+    'string.uri': 'constructionDocs must be a valid URL.'
+  })
+  .allow('') 
+  .default(''), 
+  logo: Joi.string()
+  .uri()
+  .messages({
+    'string.uri': 'logo must be a valid URL.'
+  })
+  .allow('') 
+  .default(''), 
+  threeD: Joi.array().items(
+    Joi.string().uri()
+      .messages({ 'string.uri': 'threeD must be a valid URL.' })
+  ).default([]),
   landOwnershipNumber: Joi.string().required(),
   licenseNumber: Joi.string().required(),
   features: Joi.string().min(1).required(), //  to a string instead of an array
