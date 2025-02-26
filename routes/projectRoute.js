@@ -4,10 +4,11 @@ const router = express.Router();
 const upload = require("../middleware/uploadMiddleware");
 const { addProject,getProjects } = require("../controllers/projectController");
 // router.put('/update-profile-image/:userId',upload.single('image'),updateimage);
+const {isAuthenticated,verifyJWT }= require("../middleware/authMiddleware")
 
 
 router.post(
-  "/add",
+  "/add",verifyJWT,
   upload.fields([
     { name: "images", maxCount: 20 },
     { name: "video", maxCount: 1 },

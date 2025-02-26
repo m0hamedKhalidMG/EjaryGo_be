@@ -14,7 +14,7 @@ const projectSchema = Joi.object({
 
   landOwnershipNumber: Joi.string().required(),
   licenseNumber: Joi.string().required(),
-  features: Joi.string().min(1).required(), // Changed to a string instead of an array
+  features: Joi.string().min(1).required(), //  to a string instead of an array
   location: Joi.object({
     latitude: Joi.number().min(-90).max(90).required(),
     longitude: Joi.number().min(-180).max(180).required(),
