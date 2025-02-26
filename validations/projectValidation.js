@@ -5,8 +5,8 @@ const projectSchema = Joi.object({
   name: Joi.string().min(3).max(100).required(),
   area: Joi.number().min(10).required(),
   units: Joi.number().min(1).required(),
-  address: Joi.string().min(5).max(200).required(),
   decisionNumber: Joi.string().required(),
+  landOwnershipNumber: Joi.string().required(),
   licenseNumber: Joi.string().required(),
   features: Joi.string().min(1).required(), // Changed to a string instead of an array
   location: Joi.object({

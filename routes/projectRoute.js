@@ -11,10 +11,11 @@ router.post(
   upload.fields([
     { name: "images", maxCount: 20 },
     { name: "video", maxCount: 1 },
+    { name: "logo", maxCount: 1 },
     { name: "ministerialDecision", maxCount: 1 }, // قرار وزاري
     { name: "landOwnershipDocs", maxCount: 1 },   // مستندات ملكية الأرض
     { name: "constructionDocs", maxCount: 1 },   // مستندات إنشائية
-    { name: "threeD", maxCount: 1 }
+    { name: "threeD", maxCount: 5 }
   ]),
   addProject
 );

@@ -3,6 +3,7 @@ const { createProject } = require("../models/projectModel");
 const projectSchema = require("../validations/projectValidation");
 const { uploadFile } = require("./uploadController");
 const { getAllProjects } = require("../models/projectModel");
+const { paginateResults } = require("../utils/pagination");
 
 const addProject = async (req, res) => {
   try {
@@ -20,6 +21,10 @@ const addProject = async (req, res) => {
           req.files.images.map((file) => uploadFile(file, `projects/${projectId}/images`))
         );
       }
+        if (req.files.logo) {
+          fileUrls.logo = await uploadFile(req.files.logo[0], `projects/${projectId}/logo`);
+        }
+      
       if (req.files.video) {
         fileUrls.video = await uploadFile(req.files.video[0], `projects/${projectId}/videos`);
       }
@@ -33,7 +38,11 @@ const addProject = async (req, res) => {
         fileUrls.constructionDocs = await uploadFile(req.files.constructionDocs[0], `projects/${projectId}/constructionDocs`);
       }
       if (req.files.threeD) {
-        fileUrls.threeD = await uploadFile(req.files.threeD[0], `projects/${projectId}/3D`);
+
+        fileUrls.threeDs = await Promise.all(
+          req.files.threeD.map((file) => uploadFile(file, `projects/${projectId}/3D`))
+        );
+
       }
     }
 
@@ -54,14 +63,16 @@ const addProject = async (req, res) => {
   // Controller function to handle fetching projects
   const getProjects = async (req, res) => {
     try {
+      const { page = 1, pageSize = 10 } = req.query;
       const projects = await getAllProjects();
-  
+      const paginatedData = paginateResults(projects, parseInt(page), parseInt(pageSize));
+
       if (!Array.isArray(projects)) {
         console.error("Unexpected data format from getAllProjects.");
         return res.status(500).json({ message: "Internal Server Error" });
       }
   
-      res.json(projects);
+      res.json(paginatedData);
     } catch (error) {
       console.error("Error in controller:", error);
       res.status(500).json({ message: "Server error" });
