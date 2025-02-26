@@ -21,7 +21,7 @@ const projectSchema = Joi.object({
     country: Joi.string().min(1).max(100).required(), // Added دولة
     governorate: Joi.string().min(1).max(100).required(), // Added محافظه
     district: Joi.string().min(1).max(100).required(), // Added حي
-    innerAddress: Joi.string().min(1).max(200).required(), // Added عنوان داخل
+    Address: Joi.string().min(1).max(200).required(), // Added عنوان داخل
   }).required(),
 });
 
