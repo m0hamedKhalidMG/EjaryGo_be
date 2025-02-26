@@ -9,9 +9,10 @@ const addProject = async (req, res) => {
   try {
     // Validate request body
     const developerId = req.user.id; 
+    console.log(developerId)
 let data=req.body;
 data.ownerId=developerId
-    const { error } = projectSchema.validate(ownerId);
+    const { error } = projectSchema.validate(data);
     if (error) return res.status(400).json({ error: error.details[0].message });
 
     const projectId = Date.now().toString();
