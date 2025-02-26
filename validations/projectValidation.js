@@ -4,6 +4,7 @@ const projectSchema = Joi.object({
   ownerId: Joi.string().required(),
   name: Joi.string().min(3).max(100).required(),
   area: Joi.number().min(10).required(),
+  units: Joi.number().min(1).required(),
   decisionNumber: Joi.string().required(),
   residentialNumber: Joi.number().min(0).required(),
   commercialNumber: Joi.number().min(0).required(),
