@@ -54,7 +54,31 @@ const deleteDeveloper = async (developerId) => {
   return { message: "Developer deleted successfully" };
 };
 
+const getAllTeams = async (developerId) => {
+  try {
+    console.log(" Fetching teams for developer:", developerId);
 
+    const developerRef = doc(db, "developers", developerId);
+    const developerSnap = await getDoc(developerRef);
+
+    if (!developerSnap.exists()) {
+      console.error("❌ Developer not found.");
+      return [];
+    }
+
+    const developerData = developerSnap.data();
+    const teams = developerData.teams || [];
+
+    return teams.map(team => ({
+      id: team.id,
+      name: team.name,
+      managerId: team.managerId
+    }));
+  } catch (error) {
+    console.error("❌ Error fetching teams:", error.message);
+    return [];
+  }
+};
 const addTeam = async (developerId, teamData) => {
   const { name, role, managerId } = teamData;
 
@@ -325,4 +349,7 @@ module.exports = {
   updateDeveloperAttachment,
   addTeam,
   addEmployeeToTeamModel,
-  getTeamsByAttribute };
+  getTeamsByAttribute ,
+  getAllTeams
+
+};

@@ -1,11 +1,11 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { createEmployee, getEmployeeByEmail,uploadProfile } = require("../models/employeeModel");
+const { createEmployee, getEmployeeByEmail,uploadProfile ,isEmailTaken} = require("../models/employeeModel");
 const { validateEmployee } = require("../validations/employeeValidation");
 const { v4: uuidv4 } = require('uuid');
 const { uploadFile } = require("./uploadController");
 const Joi = require('joi');
-const { addTeam } = require('../models/developerModel');
+const { addTeam,addEmployeeToTeamModel } = require('../models/developerModel');
 
 const registerEmployee = async (req, res) => {
   try {
@@ -44,21 +44,63 @@ const loginEmployee = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+
+  
 const addEmployee = async (req, res) => {
   try {
-      const { error } = validateEmployee(req.body);
-      if (error) {
-          return res.status(400).json({ message: error.details.map((e) => e.message) });
+    const developerId = req.user.id;
+    let data = { ...req.body, password: "SecurePass123!", developerId };
+    if (!req.files || !req.files.National_Id || req.files.National_Id.length === 0) {
+      return res.status(400).json({ message: ["National Id attachment (image) is required."] });
+    }
+    const { error } = validateEmployee(data);
+    if (error) {
+      return res.status(400).json({ message: error.details.map((e) => e.message) });
+    }
+
+    if (await isEmailTaken(data.email)) {
+      return res.status(400).json({ message: "Email already exists. Please use a different email." });
+    }
+
+    const fileUrls = {};
+    if (req.files) {
+      if (req.files.National_Id) {
+        fileUrls.National_Id = await uploadFile(req.files.National_Id[0], `Employee/${developerId}/National_Id`);
       }
-      employeeData=req.body
-      
-      employeeData.password = await bcrypt.hash(employeeData.password, 10);
-      const newEmployee = await createEmployee(employeeData);
-      res.status(201).json({ message: "Employee created successfully", employee: newEmployee });
+      if (req.files.profile_img) {
+        fileUrls.profile_img = await uploadFile(req.files.profile_img[0], `Employee/${developerId}/profile_img`);
+      }
+    }
+
+    const employeeData = { ...data, fileUrls };
+    const newEmployee = await createEmployee(employeeData);
+
+    const { teamId } = req.body;
+    if (teamId) {
+      try {
+        const message = await addEmployeeToTeamModel(developerId, teamId, newEmployee.id);
+        return res.status(200).json({ message, employee: newEmployee });
+      } catch (error) {
+        return res.status(400).json({ error: error.message });
+      }
+    }
+
+    res.status(201).json({ message: "Employee created successfully", employee: newEmployee });
+
   } catch (error) {
-      res.status(500).json({ message: error.message });
+    console.error("❌ Error creating employee:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+  
+
+
+
+
+
+
 const getEmployees = async (req, res) => {
   try {
       const employees = await getAllEmployees();

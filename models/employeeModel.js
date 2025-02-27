@@ -1,12 +1,25 @@
 const { db } = require("../config/firebase");
-const { collection, doc, addDoc, getDoc, getDocs, setDoc, deleteDoc, updateDoc } = require("firebase/firestore/lite");
+const { collection, doc, addDoc, getDoc, getDocs, setDoc, deleteDoc, updateDoc,query,where } = require("firebase/firestore/lite");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 // CREATE Employee
-const createEmployee = async (employeeData) => {
-    const employeeRef = await addDoc(collection(db, "employees"), employeeData);
-    return { id: employeeRef.id, ...employeeData };
-};
 
+// Function to check if an email already exists
+const isEmailTaken = async (email) => {
+    const employeesRef = collection(db, "employees");
+    const emailQuery = query(employeesRef, where("email", "==", email));
+    const querySnapshot = await getDocs(emailQuery);
+    return !querySnapshot.empty; // Returns true if email exists, false otherwise
+  };
+  
+  // Function to create a new employee
+  const createEmployee = async (employeeData) => {
+    employeeData.password = await bcrypt.hash(employeeData.password, 10); // Hash the password
+    const employeesRef = collection(db, "employees");
+    const employeeRef = await addDoc(employeesRef, employeeData);
+    return { id: employeeRef.id, ...employeeData }; // Return new employee data
+  };
 // GET ALL Employees
 const getAllEmployees = async () => {
     const employeesSnapshot = await getDocs(collection(db, "employees"));
@@ -53,4 +66,4 @@ const uploadProfile  = async (employeeId, attachmentUrl) => {
 
   return { id: employeeId, attachmentUrl };
 };
-module.exports = { createEmployee, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee,uploadProfile };
+module.exports = {isEmailTaken, createEmployee, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee,uploadProfile };

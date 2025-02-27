@@ -10,7 +10,8 @@ const {
   addTeamToDeveloper,
   developerLogin,
   getDeveloperById,
-  searchTeamByAttribute
+  searchTeamByAttribute,
+  fetchAllTeams 
 } = require("../controllers/developerController");
 const upload = require("../middleware/uploadMiddleware");
 const {isAuthenticated,verifyJWT }= require("../middleware/authMiddleware")
@@ -23,6 +24,7 @@ router.post("/:developerId/add-team", addTeamToDeveloper);
 router.post('/add-employee-to-team', addEmployeeToTeam);
 router.post('/login', developerLogin);
 router.get('/developer_details',verifyJWT, getDeveloperById);
+router.get('/teams',verifyJWT, fetchAllTeams );
 
 // CREATE Developer
 router.post("/:id/attachments", upload.single("attachments"), putAttachmentDeveloper);

@@ -9,6 +9,7 @@ const {
     getdeveloperByEmail,
     fetchDeveloperById,
     getTeamsByAttribute,
+    getAllTeams,
   } = require("../models/developerModel");
   const Joi = require('joi');
   const bcrypt = require("bcryptjs");
@@ -42,7 +43,22 @@ const {
       res.status(500).json({ message: error.message });
     }
   };
+  const fetchAllTeams = async (req, res) => {
+    try {
+      const developerId = req.user.id; // Assuming developer ID is coming from auth middleware
   
+      if (!developerId) {
+        return res.status(400).json({ message: "Developer ID is required" });
+      }
+  
+      const data = await getAllTeams(developerId);
+  
+      res.status(200).json({ data });
+    } catch (error) {
+      console.error("❌ Error fetching teams:", error.message);
+      res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+  };
   // GET Developer by ID
   const getDeveloperByIdHandler = async (req, res) => {
     try {
@@ -223,6 +239,7 @@ console.log(req.user)
     addEmployeeToTeam,
     developerLogin,
     getDeveloperById,
-    searchTeamByAttribute
+    searchTeamByAttribute,
+    fetchAllTeams
   };
   
