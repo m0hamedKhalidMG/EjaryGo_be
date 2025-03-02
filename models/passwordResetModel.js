@@ -20,14 +20,7 @@ const saveResetToken = async (id, token) => {
 
 // ✅ Verify token validity
 const verifyResetToken = async (token, resetData) => {
-    if (!resetData) {
-        console.error("❌ Reset data not found for the provided ID.");
-        return false;
-      }
-      if (!resetData.token) {
-        console.error("❌ Token is missing in Firestore document:", resetData);
-        return false;
-      }
+    
   if (!resetData || new Date() > resetData.expiresAt.toDate()) return false;
   return await bcrypt.compare(token, resetData.token);
 };
