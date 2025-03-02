@@ -6,7 +6,11 @@ const { v4: uuidv4 } = require('uuid');
 const { uploadFile } = require("./uploadController");
 const Joi = require('joi');
 const { addTeam,addEmployeeToTeamModel } = require('../models/developerModel');
+const crypto = require("crypto");
+const { db } = require("../config/firebase");
+const { sendEmailInvite } = require("../utils/emailService");
 
+const { collection, doc, addDoc, getDoc, getDocs, setDoc, deleteDoc, updateDoc,query,where } = require("firebase/firestore/lite");
 const registerEmployee = async (req, res) => {
   try {
     const { name, email, password, position, salary, contact } = req.body;
@@ -48,53 +52,106 @@ const loginEmployee = async (req, res) => {
 
 
   
+// const addEmployee = async (req, res) => {
+//   try {
+//     const developerId = req.user.id;
+//     let data = { ...req.body, password: "SecurePass123!", developerId };
+//     if (!req.files || !req.files.National_Id || req.files.National_Id.length === 0) {
+//       return res.status(400).json({ message: ["National Id attachment (image) is required."] });
+//     }
+//     const { error } = validateEmployee(data);
+//     if (error) {
+//       return res.status(400).json({ message: error.details.map((e) => e.message) });
+//     }
+
+//     if (await isEmailTaken(data.email)) {
+//       return res.status(400).json({ message: "Email already exists. Please use a different email." });
+//     }
+
+//     const fileUrls = {};
+//     if (req.files) {
+//       if (req.files.National_Id) {
+//         fileUrls.National_Id = await uploadFile(req.files.National_Id[0], `Employee/${developerId}/National_Id`);
+//       }
+//       if (req.files.profile_img) {
+//         fileUrls.profile_img = await uploadFile(req.files.profile_img[0], `Employee/${developerId}/profile_img`);
+//       }
+//     }
+
+//     const employeeData = { ...data, fileUrls };
+//     const newEmployee = await createEmployee(employeeData);
+
+//     const { teamId } = req.body;
+//     if (teamId) {
+//       try {
+//         const message = await addEmployeeToTeamModel(developerId, teamId, newEmployee.id);
+//         return res.status(200).json({ message, employee: newEmployee });
+//       } catch (error) {
+//         return res.status(400).json({ error: error.message });
+//       }
+//     }
+
+//     res.status(201).json({ message: "Employee created successfully", employee: newEmployee });
+
+//   } catch (error) {
+//     console.error("❌ Error creating employee:", error);
+//     res.status(500).json({ message: "Internal Server Error", error: error.message });
+//   }
+// };
+  
+
+
+
 const addEmployee = async (req, res) => {
   try {
     const developerId = req.user.id;
     let data = { ...req.body, password: "SecurePass123!", developerId };
-    if (!req.files || !req.files.National_Id || req.files.National_Id.length === 0) {
-      return res.status(400).json({ message: ["National Id attachment (image) is required."] });
+
+    // ✅ Validate required fields
+    if (!req.files?.National_Id) {
+      return res.status(400).json({ message: "National ID attachment is required." });
     }
+
+    // ✅ Validate employee data
     const { error } = validateEmployee(data);
-    if (error) {
-      return res.status(400).json({ message: error.details.map((e) => e.message) });
-    }
+    if (error) return res.status(400).json({ message: error.details.map((e) => e.message) });
 
+    // ✅ Check if email already exists
     if (await isEmailTaken(data.email)) {
-      return res.status(400).json({ message: "Email already exists. Please use a different email." });
+      return res.status(400).json({ message: "Email already registered." });
     }
 
+    // ✅ Upload files and save URLs
     const fileUrls = {};
-    if (req.files) {
-      if (req.files.National_Id) {
-        fileUrls.National_Id = await uploadFile(req.files.National_Id[0], `Employee/${developerId}/National_Id`);
-      }
-      if (req.files.profile_img) {
-        fileUrls.profile_img = await uploadFile(req.files.profile_img[0], `Employee/${developerId}/profile_img`);
-      }
+    if (req.files.National_Id) {
+      fileUrls.National_Id = await uploadFile(req.files.National_Id[0], `Employee/${developerId}/National_Id`);
+    }
+    if (req.files.profile_img) {
+      fileUrls.profile_img = await uploadFile(req.files.profile_img[0], `Employee/${developerId}/profile_img`);
     }
 
+    // ✅ Save employee record
     const employeeData = { ...data, fileUrls };
     const newEmployee = await createEmployee(employeeData);
 
-    const { teamId } = req.body;
-    if (teamId) {
-      try {
-        const message = await addEmployeeToTeamModel(developerId, teamId, newEmployee.id);
-        return res.status(200).json({ message, employee: newEmployee });
-      } catch (error) {
-        return res.status(400).json({ error: error.message });
-      }
-    }
+    // ✅ Generate a secure token for password setup
+    const token = crypto.randomBytes(32).toString("hex");
+    const hashedToken = await bcrypt.hash(token, 10);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Valid for 1 hour
 
-    res.status(201).json({ message: "Employee created successfully", employee: newEmployee });
+    // ✅ Store token in Firestore
+    await setDoc(doc(db, "password_resets", newEmployee.id), { token: hashedToken, expiresAt });
+    // ✅ Send email with password setup link
+    const resetUrl = `https://resetpassword-eta.vercel.app/?token=${token}&id=${newEmployee.id}`;
+    await sendEmailInvite(data.email, resetUrl, req.user.email);
+
+    res.status(201).json({ message: "Employee added. Email sent for password setup.", employee: newEmployee });
 
   } catch (error) {
-    console.error("❌ Error creating employee:", error);
+    console.error("❌ Error adding employee:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
-  
 
 
 

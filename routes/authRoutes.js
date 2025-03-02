@@ -2,6 +2,8 @@ const express = require("express");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const admin = require("firebase-admin");
+const { resetPassword } = require("../controllers/authController");
+
 const {isAuthenticated,verifyJWT }= require("../middleware/authMiddleware")
 const {completeProfile} =require("../controllers/userController")
 const router = express.Router();
@@ -58,5 +60,10 @@ router.post("/verify-otp", async (req, res) => {
       return res.status(401).json({ error: "Invalid or expired OTP", details: error.message });
     }
   });
+  
+  
+  router.post("/reset-password", resetPassword);
+  
+  
 module.exports = router;
 
