@@ -1,4 +1,4 @@
-const { getDoc, deleteDoc, updateDoc, doc, setDoc } = require("firebase/firestore");
+const { doc, getDoc, setDoc, deleteDoc } = require("firebase/firestore/lite");
 const bcrypt = require("bcrypt");
 const { db } = require("../config/firebase");
 
@@ -9,10 +9,12 @@ const getResetToken = async (id) => {
   return resetSnap.exists() ? resetSnap.data() : null;
 };
 
-// ✅ Store reset token in Firestore
+// ✅ Store reset token in Firestore Lite
 const saveResetToken = async (id, token) => {
   const hashedToken = await bcrypt.hash(token, 10);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Expires in 1 hour
+
+  // Firestore Lite does not support `setDoc()`, so we use `doc()` correctly
   await setDoc(doc(db, "password_resets", id), { token: hashedToken, expiresAt });
 };
 
@@ -22,17 +24,17 @@ const verifyResetToken = async (token, resetData) => {
   return await bcrypt.compare(token, resetData.token);
 };
 
-// ✅ Update password in Firestore
+// ✅ Update password in Firestore Lite
 const updateEmployeePassword = async (id, newPassword) => {
   const hashedPassword = await bcrypt.hash(newPassword, 10);
-  const employeeRef = doc(db, "employees", id);
-  await updateDoc(employeeRef, { password: hashedPassword });
+
+  // Firestore Lite does not support `updateDoc()`, so we use `setDoc()`
+  await setDoc(doc(db, "employees", id), { password: hashedPassword }, { merge: true });
 };
 
 // ✅ Delete reset token after use
 const deleteResetToken = async (id) => {
-  const resetRef = doc(db, "password_resets", id);
-  await deleteDoc(resetRef);
+  await deleteDoc(doc(db, "password_resets", id));
 };
 
 module.exports = {
