@@ -1,6 +1,6 @@
 const { getDoc, deleteDoc, updateDoc, doc, setDoc } = require("firebase/firestore");
 const bcrypt = require("bcrypt");
-const db = require("../config/firebase"); // Firestore config
+const { db } = require("../config/firebase");
 
 // ✅ Get reset token data
 const getResetToken = async (id) => {
