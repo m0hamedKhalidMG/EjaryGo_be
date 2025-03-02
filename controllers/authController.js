@@ -7,7 +7,6 @@ const {
   
   const resetPassword = async (req, res) => {
     try {
-        console.log("Received Data:", req.body);
 
       const { newPassword , token, id} = req.body;
   
